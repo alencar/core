@@ -655,8 +655,7 @@ PHB_EXPR hb_compExprNewAliasExpr( PHB_EXPR pAlias, PHB_EXPR pExpList,
    if( pAlias->ExprType == HB_ET_MACRO )
    {
       /* Is it a special case &variable->( expressionList ) */
-      if( pAlias->value.asMacro.SubType == HB_ET_MACRO_VAR ||
-          pAlias->value.asMacro.SubType == HB_ET_MACRO_EXPR )
+      if( pAlias->value.asMacro.SubType & ( HB_ET_MACRO_VAR | HB_ET_MACRO_EXPR ) )
          pAlias->value.asMacro.SubType = HB_ET_MACRO_ALIASED;
    }
 
@@ -1366,12 +1365,8 @@ HB_SIZE hb_compExprParamListCheck( HB_COMP_DECL, PHB_EXPR pExpr )
       while( pElem )
       {
          if( ( pElem->ExprType == HB_ET_MACRO && HB_SUPPORT_XBASE &&
-               pElem->value.asMacro.SubType != HB_ET_MACRO_SYMBOL &&
-               pElem->value.asMacro.SubType != HB_ET_MACRO_REFER &&
-               pElem->value.asMacro.SubType != HB_ET_MACRO_ALIASED &&
-               ( pElem->value.asMacro.SubType & HB_ET_MACRO_PARE ) == 0 ) ||
-             ( pElem->ExprType == HB_ET_ARGLIST &&
-               pElem->value.asList.reference ) ||
+               ( pElem->value.asMacro.SubType & HB_ET_MACRO_NOLIST ) == 0 ) ||
+             ( pElem->ExprType == HB_ET_ARGLIST && pElem->value.asList.reference ) ||
              hb_compExprIsArrayToParams( pElem ) )
          {
             /* &macro was passed

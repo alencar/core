@@ -1999,7 +1999,7 @@ static HB_ERRCODE adsDeleteRec( ADSAREAP pArea )
 
    if( hb_ads_bTestRecLocks )
    {
-      if( ! hb_adsCheckLock( pArea ) == HB_SUCCESS )
+      if( hb_adsCheckLock( pArea ) != HB_SUCCESS )
          return HB_FAILURE;
    }
 
@@ -2572,7 +2572,7 @@ static HB_ERRCODE adsPutRec( ADSAREAP pArea, const HB_BYTE * pBuffer )
 
    if( hb_ads_bTestRecLocks )
    {
-      if( ! hb_adsCheckLock( pArea ) == HB_SUCCESS )
+      if( hb_adsCheckLock( pArea ) != HB_SUCCESS )
          return HB_FAILURE;
    }
 
@@ -2622,7 +2622,7 @@ static HB_ERRCODE adsPutValue( ADSAREAP pArea, HB_USHORT uiIndex, PHB_ITEM pItem
 
    if( hb_ads_bTestRecLocks )
    {
-      if( ! hb_adsCheckLock( pArea ) == HB_SUCCESS )
+      if( hb_adsCheckLock( pArea ) != HB_SUCCESS )
          return HB_FAILURE;
    }
 
@@ -2840,7 +2840,7 @@ static HB_ERRCODE adsRecall( ADSAREAP pArea )
 
    if( hb_ads_bTestRecLocks )
    {
-      if( ! hb_adsCheckLock( pArea ) == HB_SUCCESS )
+      if( hb_adsCheckLock( pArea ) != HB_SUCCESS )
          return HB_FAILURE;
    }
 
@@ -3457,10 +3457,10 @@ static HB_ERRCODE adsOpen( ADSAREAP pArea, LPDBOPENINFO pOpenInfo )
       hTable = pArea->hTable;
       hStatement = pArea->hStatement;
    }
-   else if( szFile && ( ( hb_strnicmp( szFile, "SELECT ", 7 ) == 0 ) || 
+   else if( szFile && ( ( hb_strnicmp( szFile, "SELECT ", 7 ) == 0 ) ||
                         ( hb_strnicmp( szFile, "SQL:", 4 ) == 0 ) ) )
    {
-      if( hb_strnicmp( szFile, "SQL:", 4 ) == 0 ) 
+      if( hb_strnicmp( szFile, "SQL:", 4 ) == 0 )
          szFile += 4;
 
       pArea->szQuery = hb_strdup( szFile );
@@ -5056,7 +5056,7 @@ static HB_ERRCODE adsPutValueFile( ADSAREAP pArea, HB_USHORT uiIndex, const char
 
    if( hb_ads_bTestRecLocks )
    {
-      if( ! hb_adsCheckLock( pArea ) == HB_SUCCESS )
+      if( hb_adsCheckLock( pArea ) != HB_SUCCESS )
          return HB_FAILURE;
    }
 
@@ -5343,7 +5343,7 @@ static HB_ERRCODE adsRddInfo( LPRDDNODE pRDD, HB_USHORT uiIndex, HB_ULONG ulConn
          /* NOTE: Only allow disconnect of 0 if explicitly passed.
                   The thread default connection handle might be 0 if caller
                   accidentally disconnects twice. */
-    
+
          if( ( hConnect != 0 || HB_IS_NUMERIC( pItem ) ) &&
              AdsDisconnect( hConnect ) == AE_SUCCESS )
          {
@@ -5440,7 +5440,7 @@ static HB_ERRCODE adsRddInfo( LPRDDNODE pRDD, HB_USHORT uiIndex, HB_ULONG ulConn
             AdsStmtSetTableType( hStatement, adsGetFileType( pRDD->rddID ) );
 
             u32RetVal = AdsExecuteSQLDirect( hStatement, ( UNSIGNED8 * ) hb_itemGetCPtr( pItem ), &hCursor );
-            if( u32RetVal == AE_SUCCESS ) 
+            if( u32RetVal == AE_SUCCESS )
             {
                if( AdsGetLastAutoinc( hStatement, &u32RetVal ) == AE_SUCCESS )
                   pData->ulInsertID = u32RetVal;

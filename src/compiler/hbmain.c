@@ -904,6 +904,17 @@ static int hb_compVariableScope( HB_COMP_DECL, const char * szVarName )
    return iScope;
 }
 
+void hb_compPushMacroVar( HB_COMP_DECL, const char * szVarName )
+{
+   /* save and restore iEarlyEvalPass to not disable early
+      evaluation when only macrovar and/or macrotex is used */
+   int iEarlyEvalPass = HB_COMP_PARAM->functions.pLast->iEarlyEvalPass;
+
+   hb_compGenPushVar( szVarName, HB_COMP_PARAM );
+
+   HB_COMP_PARAM->functions.pLast->iEarlyEvalPass = iEarlyEvalPass;
+}
+
 void hb_compPushMacroText( HB_COMP_DECL, const char * szText, HB_SIZE nLen, HB_BOOL fMacro )
 {
    int iEarlyEvalPass = HB_COMP_PARAM->functions.pLast->iEarlyEvalPass;
@@ -2149,17 +2160,14 @@ static HB_BOOL hb_compRegisterFunc( HB_COMP_DECL, PHB_HFUNC pFunc, HB_BOOL fErro
       if( fError )
          hb_compGenError( HB_COMP_PARAM, hb_comp_szErrors, 'E', HB_COMP_ERR_FUNC_DUPL, pFunc->szName, NULL );
    }
-   else
+   else if( ! hb_compCheckReservedNames( HB_COMP_PARAM, pFunc->szName, fError ) )
    {
-      if( ! hb_compCheckReservedNames( HB_COMP_PARAM, pFunc->szName, fError ) )
-      {
-         PHB_HSYMBOL pSym = hb_compSymbolFind( HB_COMP_PARAM, pFunc->szName, NULL, HB_SYM_FUNCNAME );
-         if( ! pSym )
-            pSym = hb_compSymbolAdd( HB_COMP_PARAM, pFunc->szName, NULL, HB_SYM_FUNCNAME );
-         pSym->cScope |= pFunc->cScope | HB_FS_LOCAL;
-         pSym->pFunc = pFunc;
-         return HB_TRUE;
-      }
+      PHB_HSYMBOL pSym = hb_compSymbolFind( HB_COMP_PARAM, pFunc->szName, NULL, HB_SYM_FUNCNAME );
+      if( ! pSym )
+         pSym = hb_compSymbolAdd( HB_COMP_PARAM, pFunc->szName, NULL, HB_SYM_FUNCNAME );
+      pSym->cScope |= pFunc->cScope | HB_FS_LOCAL;
+      pSym->pFunc = pFunc;
+      return HB_TRUE;
    }
    return HB_FALSE;
 }
@@ -2626,6 +2634,14 @@ void hb_compGenMessage( const char * szMsgName, HB_BOOL bIsObject, HB_COMP_DECL 
       wSym = 0xFFFF;
       hb_compGenPCode3( HB_P_WITHOBJECTMESSAGE, HB_LOBYTE( wSym ), HB_HIBYTE( wSym ), HB_COMP_PARAM );
    }
+
+   if( ! bIsObject && HB_COMP_PARAM->functions.pLast->iEarlyEvalPass == 1 )
+   {
+      if( HB_SUPPORT_MACRODECL )
+         HB_COMP_PARAM->functions.pLast->iEarlyEvalPass = 0;
+      else
+         hb_compErrorCodeblockWith( HB_COMP_PARAM, szMsgName ? szMsgName : "&..." );
+   }
 }
 
 void hb_compGenMessageData( const char * szMsg, HB_BOOL bIsObject, HB_COMP_DECL ) /* generates an underscore-symbol name for a data assignment */
@@ -2659,7 +2675,7 @@ static void hb_compCheckEarlyMacroEval( HB_COMP_DECL, const char * szVarName, in
           HB_SUPPORT_MACRODECL )
          HB_COMP_PARAM->functions.pLast->iEarlyEvalPass = 0;
       else
-         hb_compErrorCodeblock( HB_COMP_PARAM, szVarName );
+         hb_compErrorCodeblockDecl( HB_COMP_PARAM, szVarName );
    }
 }
 
@@ -3785,9 +3801,6 @@ void hb_compCodeBlockRewind( HB_COMP_DECL )
 /* initialize support variables */
 static void hb_compInitVars( HB_COMP_DECL )
 {
-   if( HB_COMP_PARAM->iErrorCount != 0 )
-      hb_compExprLstDealloc( HB_COMP_PARAM );
-
    HB_COMP_PARAM->functions.iCount = 0;
    HB_COMP_PARAM->functions.pFirst = NULL;
    HB_COMP_PARAM->functions.pLast  = NULL;
